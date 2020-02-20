@@ -60,6 +60,12 @@
         checkout.CheckoutAsGuestOrRegister();
         checkout.ApplyCouponCode();
         checkout.RemoveCouponCode();
+        checkout.ChangeShippingMethod();
+        checkout.ChangeCartItem();
+        checkout.SeparateInit();
+        checkout.ChangeAddressClick();
+        checkout.AddNewAddress();
+        checkout.ShowHideSubscription();
         // --- End
 
         // Order Detail
@@ -83,8 +89,12 @@
         // --- End
 
         // Quick Order Block
-        var quickOrderBlock = new QuickOrderBlock();
-        quickOrderBlock.Init();
+        $('.jsQuickOrderBlockForm').each(function (i, e) {
+            let newBlockId = 'jsQuickOrderBlockForm' + i;
+            $(e).attr('id', newBlockId);
+            let quickOrderBlock = new QuickOrderBlock('#' + newBlockId);
+            quickOrderBlock.Init();
+        })
         // --- End
 
         // Address
@@ -95,6 +105,17 @@
         // B2B Order
         var b2bOrder = new B2BOrder();
         b2bOrder.Init();
+        // --- End
+
+        // Order Search Block
+        var orderSearchBlock = new OrderSearchBlock();
+        orderSearchBlock.Init();
+        // --- End
+
+
+        // B2B Users
+        var b2bUsers = new UsersOrganization();
+        b2bUsers.Init();
         // --- End
     }
 }

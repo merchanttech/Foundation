@@ -84,6 +84,74 @@ namespace Foundation.Commerce.ViewModels.Header
             return viewModel as THeaderViewModel;
         }
 
+        public virtual void AddMyAccountMenu<THomePage, THeaderViewModel>(THomePage homePage,
+            THeaderViewModel viewModel)
+            where THeaderViewModel : HeaderViewModel, new()
+            where THomePage : CmsHomePage
+        {
+            var commerceHomePage = homePage as CommerceHomePage;
+            if (commerceHomePage == null)
+            {
+                return;
+            }
+
+            if (HttpContext.Current != null && !HttpContext.Current.Request.IsAuthenticated)
+            {
+                viewModel.UserLinks = new LinkItemCollection();
+                return;
+            }
+
+            var menuItems = new LinkItemCollection();
+            var filter = new FilterContentForVisitor();
+            var contact = _customerService.GetCurrentContact();
+
+            if (contact != null && contact.FoundationOrganization != null)
+            {
+                var orgLink = new LinkItem
+                {
+                    Href = _urlResolver.GetUrl(commerceHomePage.OrganizationMainPage),
+                    Text = _localizationService.GetString("My Organization", "My Organization"),
+                    Title = _localizationService.GetString("My Organization", "My Organization")
+                };
+                
+                menuItems.Add(orgLink);
+            }
+
+            foreach (var linkItem in commerceHomePage.MyAccountCommerceMenu ?? new LinkItemCollection())
+            {
+                if (!UrlResolver.Current.TryToPermanent(linkItem.Href, out var linkUrl))
+                {
+                    continue;
+                }
+
+                if (linkUrl.IsNullOrEmpty())
+                {
+                    continue;
+                }
+
+                var urlBuilder = new UrlBuilder(linkUrl);
+                var content = _urlResolver.Route(urlBuilder);
+                if (content == null || filter.ShouldFilter(content))
+                {
+                    continue;
+                }
+
+                linkItem.Title = linkItem.Text;
+                menuItems.Add(linkItem);
+            }
+
+            var signoutText = _localizationService.GetString("/Header/Account/SignOut", "Sign Out");
+            var link = new LinkItem
+            {
+                Href = "/publicapi/signout",
+                Text = signoutText,
+                Title = signoutText
+            };
+            link.Attributes.Add("css", "fa-sign-out");
+            menuItems.Add(link);
+
+            viewModel.UserLinks.AddRange(menuItems);
+        }
 
         protected virtual bool IsBookmarked(IContent currentContent)
         {
@@ -108,7 +176,8 @@ namespace Foundation.Commerce.ViewModels.Header
                 if (itemCached != null && !PageEditing.PageIsInEditMode)
                 {
                     return itemCached;
-                } else
+                }
+                else
                 {
                     var content = _contentLoader.Get<IContent>(x.ContentLink);
                     MenuItemBlock _;
@@ -149,7 +218,7 @@ namespace Foundation.Commerce.ViewModels.Header
                     return menuItem;
                 }
             }).ToList();
-            
+
             return new T
             {
                 HomePage = homePage,
@@ -158,7 +227,7 @@ namespace Foundation.Commerce.ViewModels.Header
                 UserLinks = new LinkItemCollection(),
                 Name = contact?.FirstName ?? "",
                 IsBookmarked = isBookmarked,
-                MenuItems = menuItems,
+                MenuItems = menuItems ?? new List<MenuItemViewModel>(),
                 LoginViewModel = new LoginViewModel
                 {
                     ResetPasswordPage = homePage.ResetPasswordPage
@@ -167,7 +236,6 @@ namespace Foundation.Commerce.ViewModels.Header
                 {
                     Address = new AddressModel()
                 },
-                MobileNavigation = homePage.MobileNavigationPages,
             };
         }
 
@@ -247,69 +315,8 @@ namespace Foundation.Commerce.ViewModels.Header
                     }
                 };
 
-                _addressBookService.LoadAddress(viewModel.RegisterAccountViewModel.Address);
                 viewModel.RegisterAccountViewModel.Address.Name = _localizationService.GetString("/Shared/Address/DefaultAddressName", "Default Address");
             }
-        }
-
-        protected virtual void AddMyAccountMenu(CommerceHomePage homePage, CommerceHeaderViewModel viewModel)
-        {
-            if (HttpContext.Current != null && !HttpContext.Current.Request.IsAuthenticated)
-            {
-                viewModel.UserLinks = new LinkItemCollection();
-                return;
-            }
-
-            var menuItems = new LinkItemCollection();
-            var filter = new FilterContentForVisitor();
-            var contact = _customerService.GetCurrentContact();
-
-            if (contact != null && contact.FoundationOrganization != null)
-            {
-                var orgLink = new LinkItem
-                {
-                    Href = _urlResolver.GetUrl(homePage.OrganizationMainPage),
-                    Text = _localizationService.GetString("My Organization", "My Organization"),
-                    Title = _localizationService.GetString("My Organization", "My Organization")
-                };
-                //orgLink.Attributes.Add("css", "fa-sign-out");
-                menuItems.Add(orgLink);
-            }
-
-            foreach (var linkItem in homePage.MyAccountCommerceMenu ?? new LinkItemCollection())
-            {
-                if (!UrlResolver.Current.TryToPermanent(linkItem.Href, out var linkUrl))
-                {
-                    continue;
-                }
-
-                if (linkUrl.IsNullOrEmpty())
-                {
-                    continue;
-                }
-
-                var urlBuilder = new UrlBuilder(linkUrl);
-                var content = _urlResolver.Route(urlBuilder);
-                if (content == null || filter.ShouldFilter(content))
-                {
-                    continue;
-                }
-
-                linkItem.Title = linkItem.Text;
-                menuItems.Add(linkItem);
-            }
-
-            var signoutText = _localizationService.GetString("/Header/Account/SignOut", "Sign Out");
-            var link = new LinkItem
-            {
-                Href = "/publicapi/signout",
-                Text = signoutText,
-                Title = signoutText
-            };
-            link.Attributes.Add("css", "fa-sign-out");
-            menuItems.Add(link);
-
-            viewModel.UserLinks.AddRange(menuItems);
         }
 
         protected virtual string GetFlagUrl(MarketId marketId)

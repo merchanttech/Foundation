@@ -155,7 +155,7 @@
             <Description>You will be deducted from your credit account.</Description>
           </BudgetPayment>
           <GiftCardPayment>
-            <Description>1 point equals 1 currency unit.</Description>
+            <Description>You will be deducted from your gift card. The price will be converted to USD when you purchase.</Description>
           </GiftCardPayment>
           <CreditCard>
             <Labels>
@@ -994,11 +994,6 @@
         <Locations>Locations</Locations>
         <Organization>Organization</Organization>
       </Organization>
-      <QuickOrder>
-        <Interface>Quick Order Interface</Interface>
-        <ProductName>Product Name</ProductName>
-        <AddRow>Add Row</AddRow>
-      </QuickOrder>
       <Users>
         <Lookup>Look up user or fill in their details</Lookup>
         <SearchUsers>search for users</SearchUsers>
@@ -1058,6 +1053,9 @@
       </defaultprice>
     </facetregistry>
     <contenttypes>
+      <SiteURLPredefinedHiddenElementBlock>
+        <name>Site URL</name>
+      </SiteURLPredefinedHiddenElementBlock>
       <featureboxblock>
         <properties>
           <iconname>
@@ -1084,7 +1082,7 @@
       </cookiedropblock>
       <customizedsearchblock>
         <name>Customized Search Block</name>
-        <properties>  
+        <properties>
           <heading>
             <caption>Heading</caption>
           </heading>

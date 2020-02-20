@@ -10,9 +10,11 @@
         this.btn = document.getElementById("js-searchbutton");
         this.box = document.getElementById("js-searchbox");
         this.boxInput = document.getElementById("js-searchbox-input");
-        this.box.style.width = "80px";
-        this.box.style.visibility = "hidden";
-        var t;
+        if (this.box) {
+            this.box.style.width = "80px";
+            this.box.style.visibility = "hidden";
+        }
+        var typingTimer;
 
         $("#js-searchbutton").click(function () {
             inst.ExpandSearchBox();
@@ -22,39 +24,41 @@
         });
         $(".jsSearchText").each(function (i, e) {
             inst.boxContent = $($(e).data('result-container'))[0];
-            $(e).on("input", function () {
-                clearTimeout(t);
+            $(e).on("keyup", function () {
+                clearTimeout(typingTimer);
                 const val = $(this).val();
-                const container = $(this).data('result-container')
+                const container = $(this).data('result-container');
                 const divParent = "#" + $(this).parent().attr('id');
-                t = setTimeout(function () {
+                typingTimer = setTimeout(function () {
                     inst.Search(val, divParent, container);
-                }, 500);
-            })
+                }, 1000);
+            });
 
             $(e).on('keypress',
                 function (e) {
                     if (e.which == 13) {
-                        const searchUrl = $(this).data('search')
+                        const searchUrl = $(this).data('search');
                         const val = $(this).val();
                         var url = `${searchUrl}?search=${val}`;
                         if ($(this).attr('id') == 'js-searchbox-input') {
                             var confidence = $('#searchConfidence').val();
                             url += "&Confidence=" + confidence;
                         }
-                        
+
                         location.href = url;
                     }
                 });
-        })
+        });
 
         document.addEventListener("click", function (e) {
-            if (inst.box.contains(e.target) || inst.btn.contains(e.target) || inst.boxContent.contains(e.target)) {
-                return;
-            }
+            if (inst.box && inst.boxContent && inst.btn) {
+                if (inst.box.contains(e.target) || inst.btn.contains(e.target) || inst.boxContent.contains(e.target)) {
+                    return;
+                }
 
-            inst.HidePopover();
-            inst.CollapseSearchBox();
+                inst.HidePopover();
+                inst.CollapseSearchBox();
+            }
         });
 
         inst.ProcessImage();
@@ -103,9 +107,9 @@
                     }
                 });
             } else if (this.desktop) {
-                this.desktop.update()
+                this.desktop.update();
             } else if (this.mobile) {
-                this.mobile.update()
+                this.mobile.update();
             }
 
             if (inst.searching) {
@@ -162,7 +166,7 @@
             var fileId = $(e).data('input');
             $(e).click(function () {
                 $(fileId).click();
-            })
+            });
 
             $(fileId).change(function () {
                 try {
@@ -173,8 +177,8 @@
                 } catch (e) {
                     console.log(e);
                 }
-            })
-        })
+            });
+        });
     }
 
     InputValidation(files) {
@@ -242,17 +246,17 @@
             var raw = decodeURIComponent(parts[1]);
             return new Blob([raw], { type: contentType });
         }
-        var parts = dataURL.split(BASE64_MARKER);
-        var contentType = parts[0].split(':')[1];
-        var raw = window.atob(parts[1]);
-        var rawLength = raw.length;
+        var base64parts = dataURL.split(BASE64_MARKER);
+        var base64contentType = base64parts[0].split(':')[1];
+        var base64raw = window.atob(parts[1]);
+        var base64rawLength = base64raw.length;
 
         var uInt8Array = new Uint8Array(rawLength);
 
-        for (var i = 0; i < rawLength; ++i) {
-            uInt8Array[i] = raw.charCodeAt(i);
+        for (var i = 0; i < base64rawLength; ++i) {
+            uInt8Array[i] = base64raw.charCodeAt(i);
         }
 
-        return new Blob([uInt8Array], { type: contentType });
+        return new Blob([uInt8Array], { type: base64contentType });
     }
 }

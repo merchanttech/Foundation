@@ -5,6 +5,7 @@ using EPiServer.DataAnnotations;
 using EPiServer.Shell.ObjectEditing;
 using Foundation.Cms.Blocks;
 using Foundation.Cms.EditorDescriptors;
+using Foundation.Commerce.Models.EditorDescriptors;
 using System.ComponentModel.DataAnnotations;
 
 namespace Foundation.Commerce.Models.Blocks
@@ -37,12 +38,20 @@ namespace Foundation.Commerce.Models.Blocks
         [Display(Name = "Catalog categories", Description = "Root categories to get products from, includes sub categories", GroupName = SystemTabNames.Content, Order = 50)]
         public virtual ContentArea Nodes { get; set; }
 
+        [Display(Name = "Sort order", Description = "Sort order to apply to the search result", Order = 55)]
+        [SelectOne(SelectionFactoryType = typeof(SortOrderSelectionFactory))]
+        public virtual string SortOrder { get; set; }
+
         [Display(Description = "Filters to apply to the search result", Order = 60)]
         public virtual ContentArea Filters { get; set; }
 
         [AllowedTypes(typeof(EntryContentBase))]
         [Display(Name = "Priority products", Description = "Products to put first in the list", Order = 70)]
         public virtual ContentArea PriorityProducts { get; set; }
+
+        [Display(Name = "Discontinued products mode", Description = "Handle discontinued products to show in the list", Order = 75)]
+        [SelectOne(SelectionFactoryType = typeof(DiscontinuedProductModeSelectionFactory))]
+        public virtual string DiscontinuedProductsMode { get; set; }
 
         [CultureSpecific]
         [Display(Name = "Minimum price", Description = "The minimum price in the current market currency", Order = 80)]
@@ -51,6 +60,10 @@ namespace Foundation.Commerce.Models.Blocks
         [CultureSpecific]
         [Display(Name = "Maximum price", Description = "The maximum price in the current market currency", Order = 90)]
         public virtual int MaxPrice { get; set; }
+
+        [SelectMany(SelectionFactoryType = typeof(BrandSelectionFactory))]
+        [Display(Name = "Brand filter", Description = "Filter based on all available brands", Order = 100)]
+        public virtual string BrandFilter { get; set; }
 
         private int _startingIndex = 0;
         public void SetIndex(int index) => _startingIndex = index;
@@ -61,6 +74,8 @@ namespace Foundation.Commerce.Models.Blocks
 
             ResultsPerPage = 6;
             ItemsPerRow = 3;
+            SortOrder = "None";
+            DiscontinuedProductsMode = "None";
         }
     }
 }

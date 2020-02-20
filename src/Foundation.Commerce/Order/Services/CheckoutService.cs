@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Web.Mvc;
 
 namespace Foundation.Commerce.Order.Services
@@ -85,17 +86,28 @@ namespace Foundation.Commerce.Order.Services
 
         public virtual void UpdateShippingAddresses(ICart cart, CheckoutViewModel viewModel)
         {
-            if (viewModel.UseBillingAddressForShipment)
+            var shipments = cart.GetFirstForm().Shipments;
+            for (var index = 0; index < shipments.Count; index++)
             {
-                cart.GetFirstShipment().ShippingAddress = _addressBookService.ConvertToAddress(viewModel.BillingAddress, cart);
+                shipments.ElementAt(index).ShippingAddress = _addressBookService.ConvertToAddress(viewModel.Shipments[index].Address, cart);
+            }
+        }
+
+        public virtual void ChangeAddress(ICart cart, CheckoutViewModel viewModel, UpdateAddressViewModel updateAddressViewModel)
+        {
+            if (updateAddressViewModel.AddressType == AddressType.Billing)
+            {
+                foreach (var payment in cart.GetFirstForm().Payments)
+                {
+                    payment.BillingAddress = _addressBookService.ConvertToAddress(viewModel.BillingAddress, cart);
+                }
             }
             else
             {
                 var shipments = cart.GetFirstForm().Shipments;
-                for (var index = 0; index < shipments.Count; index++)
-                {
-                    shipments.ElementAt(index).ShippingAddress = _addressBookService.ConvertToAddress(viewModel.Shipments[index].Address, cart);
-                }
+                shipments.ElementAt(updateAddressViewModel.ShippingAddressIndex).ShippingAddress =
+                        _addressBookService.ConvertToAddress(viewModel.Shipments[updateAddressViewModel.ShippingAddressIndex].Address, cart);
+
             }
         }
 
@@ -179,9 +191,15 @@ namespace Foundation.Commerce.Order.Services
                         }
                     }
                 }
-                cart.ProcessPayments(_paymentProcessor, _orderGroupCalculator);
+                var processPayments = cart.ProcessPayments(_paymentProcessor, _orderGroupCalculator);
+                var unsuccessPayments = processPayments.Where(x => !x.IsSuccessful);
+                if (unsuccessPayments != null && unsuccessPayments.Count() > 0)
+                {
+                    throw new InvalidOperationException(string.Join("\n", unsuccessPayments.Select(x => x.Message)));
+                }
 
                 var processedPayments = cart.GetFirstForm().Payments.Where(x => x.Status.Equals(PaymentStatus.Processed.ToString()));
+
                 if (!processedPayments.Any())
                 {
                     // Return null in case there is no payment was processed.
@@ -200,13 +218,6 @@ namespace Foundation.Commerce.Order.Services
 
                 cart.AdjustInventoryOrRemoveLineItems((item, validationIssue) => { });
 
-                if (checkoutViewModel.IsUsePaymentPlan)
-                {
-                    var _paymentPlan = _orderRepository.Load<IPaymentPlan>(orderReference.OrderGroupId);
-                    _paymentPlan.AdjustInventoryOrRemoveLineItems((item, validationIssue) => { });
-                    _orderRepository.Save(_paymentPlan);
-                }
-
                 //Loyalty Program: Add Points and Number of orders
                 _loyaltyService.AddNumberOfOrders();
 
@@ -220,7 +231,7 @@ namespace Foundation.Commerce.Order.Services
             return null;
         }
 
-        public virtual bool SendConfirmation(CheckoutViewModel viewModel, IPurchaseOrder purchaseOrder)
+        public virtual async Task<bool> SendConfirmation(CheckoutViewModel viewModel, IPurchaseOrder purchaseOrder)
         {
             var startpage = _contentRepository.Get<CommerceHomePage>(ContentReference.StartPage);
             var sendOrderConfirmationMail = startpage.SendOrderConfirmationMail;
@@ -234,7 +245,7 @@ namespace Foundation.Commerce.Order.Services
 
                 try
                 {
-                    _mailService.Send(startpage.OrderConfirmationMail, queryCollection, purchaseOrder.GetFirstForm().Payments.FirstOrDefault().BillingAddress.Email, startpage.Language.Name);
+                    await _mailService.SendAsync(startpage.OrderConfirmationMail, queryCollection, purchaseOrder.GetFirstForm().Payments.FirstOrDefault().BillingAddress.Email, startpage.Language.Name);
                 }
                 catch (Exception e)
                 {
@@ -289,9 +300,10 @@ namespace Foundation.Commerce.Order.Services
 
             IPaymentPlan _paymentPlan;
             _paymentPlan = _orderRepository.Load<IPaymentPlan>(orderReference.OrderGroupId);
-            _paymentPlan.CycleMode = paymentPlanSetting.CycleMode;
+            _paymentPlan.CycleMode = PaymentPlanCycle.Days;
             _paymentPlan.CycleLength = paymentPlanSetting.CycleLength;
-            _paymentPlan.StartDate = paymentPlanSetting.StartDate;
+            _paymentPlan.StartDate = DateTime.Now.AddDays(paymentPlanSetting.CycleLength);
+            _paymentPlan.EndDate = paymentPlanSetting.EndDate;
             _paymentPlan.IsActive = paymentPlanSetting.IsActive;
 
             var principal = PrincipalInfo.CurrentPrincipal;

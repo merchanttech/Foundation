@@ -10,7 +10,10 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Foundation.Cms.Blocks
 {
-    [ContentType(DisplayName = "Page List Block", GUID = "30685434-33DE-42AF-88A7-3126B936AEAD", GroupName = SystemTabNames.Content)]
+    [ContentType(DisplayName = "Page List Block",
+        GUID = "30685434-33DE-42AF-88A7-3126B936AEAD",
+        Description = "A block that lists a bunch of pages",
+        GroupName = SystemTabNames.Content)]
     [ImageUrl("~/assets/icons/cms/blocks/CMS-icon-block-26.png")]
     public class PageListBlock : FoundationBlockData
     {
@@ -25,7 +28,7 @@ namespace Foundation.Cms.Blocks
         public virtual bool IncludeTeaserText { get; set; }
 
         [Required]
-        [Display(Name = "Number of resuts", GroupName = SystemTabNames.Content, Order = 40)]
+        [Display(Name = "Number of results", GroupName = SystemTabNames.Content, Order = 40)]
         public virtual int Count { get; set; }
 
         [UIHint("SortOrder")]

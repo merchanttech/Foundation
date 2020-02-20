@@ -73,12 +73,14 @@ namespace Foundation.Demo.Install.Steps
                     builder.CreateEnumField("ShowInDemoUserMenu", "{Customer:DemoUserMenu}", "DemoUserMenu", true, "1", false);
                     builder.CreateText("DemoUserTitle", "{Customer:DemoUserTitle}", true, 100, false);
                     builder.CreateText("DemoUserDescription", "{Customer:DemoUserDescription}", true, 500, false);
+                    builder.CreateInteger("DemoSortOrder", "{Customer:DemoSortOrder}", true, 0);
                     builder.SaveChanges();
                 }
 
                 AddMetaFieldToForms(contactMetaClass, contactMetaClass.Fields["ShowInDemoUserMenu"]);
                 AddMetaFieldToForms(contactMetaClass, contactMetaClass.Fields["DemoUserTitle"]);
                 AddMetaFieldToForms(contactMetaClass, contactMetaClass.Fields["DemoUserDescription"]);
+                AddMetaFieldToForms(contactMetaClass, contactMetaClass.Fields["DemoSortOrder"]);
 
                 var giftCardClass = manager.CreateMetaClass("GiftCard", "{Customer:GiftCard}", "{Customer:GiftCard}", "cls_GiftCard", PrimaryKeyIdValueType.Guid);
                 ModuleManager.Activate(giftCardClass, changeTrackingManifest);
@@ -108,7 +110,7 @@ namespace Foundation.Demo.Install.Steps
                 scope.SaveChanges();
             }
 
-           var contactProfile = @"<ListViewProfile xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"">
+            var contactProfile = @"<ListViewProfile xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"">
                     <Id>{54a649a9-302f-48bd-b657-11ca3604fda9}</Id>
                     <Name>{Customer:AllContacts}</Name>
                     <IsSystem>true</IsSystem>

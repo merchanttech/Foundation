@@ -3,11 +3,11 @@ using EPiServer.ContentApi.Core.Configuration;
 using EPiServer.ContentApi.Search;
 using EPiServer.Framework;
 using EPiServer.Framework.Initialization;
-using EPiServer.Labs.BlockEnhancements;
 using EPiServer.ServiceLocation;
 using Foundation.Cms.Extensions;
 using Foundation.Commerce.Extensions;
 using Foundation.Demo.Extensions;
+using Foundation.Find.Cms;
 using Foundation.Infrastructure.Services;
 using System;
 using System.Linq;
@@ -50,15 +50,9 @@ namespace Foundation.Infrastructure
 
             context.InitializeFoundationCms();
             context.InitializeFoundationCommerce();
+            context.InitializeFoundationFindCms();
             context.InitializeFoundationDemo();
 
-
-            var options = context.Locate.Advanced.GetInstance<BlockEnhancementsOptions>();
-            options.InlineEditing = true;
-            options.PublishWithLocalContentItems = true;
-            options.ContentDraftView = true;
-            options.InlinePublish = true;
-            options.StatusIndicator = true;
 
             var handler = GlobalConfiguration.Configuration.MessageHandlers
                 .FirstOrDefault(x => x.GetType() == typeof(PassiveAuthenticationMessageHandler));
@@ -67,7 +61,6 @@ namespace Foundation.Infrastructure
             {
                 GlobalConfiguration.Configuration.MessageHandlers.Remove(handler);
             }
-
         }
 
         public void Uninitialize(InitializationEngine context)

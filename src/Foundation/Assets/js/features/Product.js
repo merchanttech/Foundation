@@ -10,7 +10,7 @@
 
     /// Product handler
 
-    addToCart(data, url, callback) {
+    addToCart(data, url, callback, isAddToCart) {
         $('body>.loading-box').show();
         data.requestFrom = "axios";
         axios.post(url, data)
@@ -19,13 +19,32 @@
                     notification.Warning(result.data.Message);
                 }
                 if (result.data.StatusCode == 1) {
-                    notification.Success(result.data.Message);
+                    var checkoutLink = "";
+                    var cartLink = "";
+                    if ($('#checkoutBtnId')) {
+                        checkoutLink = $('#checkoutBtnId').attr('href');
+                    }
+
+                    if ($('#cartBtnId')) {
+                        cartLink = $('#cartBtnId').attr('href');
+                    }
+
+                    var message = result.data.Message;
+                    if (isAddToCart) {
+                        var bottomNotification = `\n<div style='display: flex; justify-content: space-between; margin-top: 15px;'>
+                            <a href='`+ cartLink + `' class='btn-notification'>View Cart</a>
+                            <a href='`+ checkoutLink + `' class='btn-notification'>Checkout</a>
+                        </div>`;
+                        message += bottomNotification;
+                    }
+                    
+                    notification.Success(message, false);
 
                     if (callback) callback(result.data.CountItems);
                 }
             })
             .catch(function (error) {
-                notification.Error(error.response.statusText);
+                notification.Error("Can not add the product to the cart.\n" + error.response.statusText);
             })
             .finally(function () {
                 $('body>.loading-box').hide();
@@ -122,7 +141,7 @@
                     inst.callbackAddToCart('.jsCartBtn', count);
                 };
 
-                inst.addToCart(data, '/DefaultCart/AddToCart', callback);
+                inst.addToCart(data, '/DefaultCart/AddToCart', callback, true);
             });
         });
     }

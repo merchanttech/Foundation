@@ -22,13 +22,22 @@
 <div class="row">
     <div class="col-12 standard-page__container">
         <div class="standard-page__hero @heroClass">
-            @if (Model.CurrentContent.MainBackgroundVideo != null)
+            @if (!ContentReference.IsNullOrEmpty(Model.CurrentContent.BackgroundVideo))
             {
                 <video class="standard-page__video @heroClass" autoplay loop playsinline muted>
-                    <source src="@Url.ContentUrl(Model.CurrentContent.MainBackgroundVideo)" type="video/mp4" @Html.EditAttributes(x => x.CurrentContent.MainBackgroundVideo)>
+                    <source src="@Url.ContentUrl(Model.CurrentContent.BackgroundVideo)" type="video/mp4" @Html.EditAttributes(x => x.CurrentContent.BackgroundVideo)>
                 </video>
             }
-            else if (Model.CurrentContent.PageImage != null)
+            else if (!ContentReference.IsNullOrEmpty(Model.CurrentContent.BackgroundImage))
+            {
+                <picture class="standard-page__banner">
+                    <source srcset="@Url.ContentUrl(Model.CurrentContent.BackgroundImage)?width=1440&format=webp" type="image/webp">
+                    <img class="standard-page__banner" src="@Url.ContentUrl(Model.CurrentContent.BackgroundImage)?width=1440" loading="lazy" />
+                </picture>
+                <div class="hero__gradient">
+                </div>
+            }
+            else if (!ContentReference.IsNullOrEmpty(Model.CurrentContent.PageImage))
             {
                 <picture class="standard-page__banner">
                     <source srcset="@Url.ContentUrl(Model.CurrentContent.PageImage)?width=1440&format=webp" type="image/webp">
@@ -42,9 +51,9 @@
             <div class="article__title">
                 @if (!Model.CategoryName.IsEmpty())
                 {
-                    <h4 class="color-light">@Model.CategoryName</h4>
+                    <h4 style="color: @Model.CurrentContent.PageTitleColor;">@Model.CategoryName</h4>
                 }
-                <h1 class="color-light margin-bottom-z">@Html.PropertyFor(x => x.CurrentContent.Name)</h1>
+                <h1 style="color: @Model.CurrentContent.PageTitleColor;">@Html.PropertyFor(x => x.CurrentContent.Name)</h1>
             </div>
             <div class="standard-page__content">
                 @if ((Model.CurrentContent.MainBody != null && !Model.CurrentContent.MainBody.IsEmpty) || PageEditing.PageIsInEditMode)

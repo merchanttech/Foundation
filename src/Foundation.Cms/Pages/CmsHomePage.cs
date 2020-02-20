@@ -3,7 +3,6 @@ using EPiServer.DataAbstraction;
 using EPiServer.DataAnnotations;
 using EPiServer.Framework.DataAnnotations;
 using EPiServer.SpecializedProperties;
-using EPiServer.Web;
 using Foundation.Cms.Blocks;
 using System.ComponentModel.DataAnnotations;
 
@@ -29,9 +28,6 @@ namespace Foundation.Cms.Pages
         [UIHint("HideContentAreaActionsContainer", PresentationLayer.Edit)]
         [Display(Name = "Main menu", GroupName = CmsTabNames.Menu, Order = 10)]
         public virtual ContentArea MainMenu { get; set; }
-
-        [Display(Name = "Mobile menu", GroupName = CmsTabNames.Menu, Order = 20)]
-        public virtual LinkItemCollection MobileNavigationPages { get; set; }
 
         [CultureSpecific]
         [Display(Name = "My account menu (CMS)",
@@ -68,6 +64,9 @@ namespace Foundation.Cms.Pages
 
         [Display(Name = "Social header", GroupName = CmsTabNames.Footer, Order = 80)]
         public virtual string SocialHeader { get; set; }
+
+        [Display(Name = "Social links", GroupName = CmsTabNames.Footer, Order = 85)]
+        public virtual LinkItemCollection SocialLinks { get; set; }
 
         [CultureSpecific]
         [Display(Name = "Content area", GroupName = CmsTabNames.Footer, Order = 90)]

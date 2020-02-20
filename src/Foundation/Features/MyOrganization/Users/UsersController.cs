@@ -20,6 +20,7 @@ using Microsoft.AspNet.Identity.Owin;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 
@@ -63,17 +64,29 @@ namespace Foundation.Features.MyOrganization.Users
         [NavigationAuthorize("Admin")]
         public ActionResult Index(UsersPage currentPage)
         {
+            if (TempData["ImpersonateFail"] != null)
+            {
+                ViewBag.Impersonate = (bool)TempData["ImpersonateFail"];
+            }
+
             var organization = _organizationService.GetCurrentFoundationOrganization();
+            var currentOrganization = organization;
+            var currentOrganizationContext = _cookieService.Get(Constant.Fields.SelectedOrganization);
+            if (currentOrganizationContext != null)
+            {
+                currentOrganization = _organizationService.GetFoundationOrganizationById(currentOrganizationContext);
+            }
+
             var viewModel = new UsersPageViewModel
             {
                 CurrentContent = currentPage,
-                Users = _customerService.GetContactsForOrganization(),
+                Users = _customerService.GetContactsForOrganization(currentOrganization),
                 Organizations = organization?.SubOrganizations ?? new List<FoundationOrganization>()
             };
 
-            if (viewModel.Organizations.Any())
+            if (currentOrganization.SubOrganizations.Any())
             {
-                foreach (var subOrg in viewModel.Organizations)
+                foreach (var subOrg in currentOrganization.SubOrganizations)
                 {
                     var contacts = _customerService.GetContactsForOrganization(subOrg);
                     viewModel.Users.AddRange(contacts);
@@ -146,25 +159,33 @@ namespace Foundation.Features.MyOrganization.Users
         [HttpPost]
         [AllowDBWrite]
         [NavigationAuthorize("Admin")]
-        public ActionResult AddUser(UsersPageViewModel viewModel)
+        public async Task<ActionResult> AddUser(UsersPageViewModel viewModel)
         {
             var user = _userManager.FindByEmail(viewModel.Contact.Email);
             if (user != null)
             {
-                if (_customerService.HasOrganization(user.Id))
+                var contact = _customerService.GetContactByEmail(user.Email);
+                var organization = _organizationService.GetCurrentFoundationOrganization();
+                if (_customerService.HasOrganization(contact.ContactId.ToString()))
                 {
                     viewModel.Contact.ShowOrganizationError = true;
-                    var organization = _organizationService.GetCurrentFoundationOrganization();
                     viewModel.Organizations = organization.SubOrganizations ?? new List<FoundationOrganization>();
                     return View(viewModel);
                 }
 
-                _customerService.AddContactToOrganization(viewModel.Contact);
-                _customerService.UpdateContact(user.Id, viewModel.Contact.UserRole, viewModel.Contact.UserLocationId);
+                var organizationId = organization.OrganizationId.ToString();
+                var currentOrganizationContext = _cookieService.Get(Constant.Fields.SelectedOrganization);
+                if (currentOrganizationContext != null)
+                {
+                    organizationId = currentOrganizationContext;
+                }
+
+                _customerService.AddContactToOrganization(contact, organizationId);
+                _customerService.UpdateContact(contact.ContactId.ToString(), viewModel.Contact.UserRole, viewModel.Contact.UserLocationId);
             }
             else
             {
-                SaveUser(viewModel);
+                await SaveUser(viewModel);
             }
 
             return RedirectToAction("Index");
@@ -186,17 +207,25 @@ namespace Foundation.Features.MyOrganization.Users
         }
 
         [NavigationAuthorize("Admin")]
-        public JsonResult ImpersonateUser(string id)
+        public ActionResult ImpersonateUser(string email)
         {
             var success = false;
-            var user = _userManager.FindById(id);
+            var user = _userManager.FindByEmail(email);
             if (user != null)
             {
                 _cookieService.Set(Constant.Cookies.B2BImpersonatingAdmin, User.Identity.GetUserName(), true);
                 _signInManager.SignIn(user, false, false);
                 success = true;
             }
-            return Json(new { success });
+            
+            if (success)
+            {
+                return Redirect("/");
+            } else
+            {
+                TempData["ImpersonateFail"] = false;
+                return RedirectToAction("Index");
+            }
         }
 
         public ActionResult BackAsAdmin()
@@ -213,7 +242,7 @@ namespace Foundation.Features.MyOrganization.Users
             return Redirect(Request.UrlReferrer?.AbsoluteUri ?? "/");
         }
 
-        private void SaveUser(UsersPageViewModel viewModel)
+        private async Task SaveUser(UsersPageViewModel viewModel)
         {
             var contactUser = new SiteUser
             {
@@ -233,7 +262,7 @@ namespace Foundation.Features.MyOrganization.Users
             if (user != null)
             {
                 var startPage = _contentLoader.Get<CommerceHomePage>(ContentReference.StartPage);
-                var body = _mailService.GetHtmlBodyForMail(startPage.ResetPasswordMail, new NameValueCollection(), ContentLanguage.PreferredCulture.TwoLetterISOLanguageName);
+                var body = await _mailService.GetHtmlBodyForMail(startPage.ResetPasswordMail, new NameValueCollection(), ContentLanguage.PreferredCulture.TwoLetterISOLanguageName);
                 var mailPage = _contentLoader.Get<MailBasePage>(startPage.ResetPasswordMail);
                 var code = _userManager.GeneratePasswordResetToken(user.Id);
                 var url = Url.Action("ResetPassword", "ResetPassword", new { userId = user.Id, code = HttpUtility.UrlEncode(code), language = ContentLanguage.PreferredCulture.TwoLetterISOLanguageName }, Request.Url.Scheme);
@@ -244,7 +273,7 @@ namespace Foundation.Features.MyOrganization.Users
                         url,
                         _localizationService.GetString("/ResetPassword/Mail/Link")));
 
-                _mailService.Send(mailPage.MailTitle, body, user.Email);
+                _mailService.Send(mailPage.Subject, body, user.Email);
             }
         }
 

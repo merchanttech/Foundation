@@ -5,7 +5,7 @@ namespace Foundation.Commerce
     public static class Constant
     {
         public const string SectionName = "InfoBlock";
-        public const string ErrorMesages = "ErrorMesages";
+        public const string ErrorMessages = "ErrorMessages";
         public const string DefaultDisplayOrder = "10000";
 
         public static class GroupNames
@@ -40,8 +40,8 @@ namespace Foundation.Commerce
             public const string UserRoleFriendly = "User Role";
             public const string UserLocation = "UserLocation";
             public const string UserLocationFriendly = "User Location";
-            public const string SelectedSuborganization = "SelectedSuborganization";
-            public const string SelectedNavSuborganization = "SelectedNavSuborganization";
+            public const string SelectedOrganization = "SelectedSuborganization";
+            public const string SelectedNavOrganization = "SelectedNavSuborganization";
             public const string LockAmount = "LockOrganizationAmount";
             public const string OverwritedMarket = "OverwritedMarket";
         }
@@ -70,6 +70,7 @@ namespace Foundation.Commerce
             public const string PreQuoteTotal = "PreQuoteTotal";
             public const string PreQuotePrice = "PreQuotePrice";
             public const string QuoteExpired = "QuoteExpired";
+            public const string RequestQuoteStatus = "RequestQuoteStatus";
         }
 
         public static class Customer
